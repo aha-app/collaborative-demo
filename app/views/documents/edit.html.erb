@@ -1,0 +1,10 @@
+<h1>Collaborative demo</h1>
+
+<p>Content:</p>
+
+<%= content_tag :div,
+  class: "collaborative-editor",
+  data: {
+    content: @document.content,
+    version: @document.version
+  }.to_json do %><% end %>

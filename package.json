@@ -1,0 +1,31 @@
+{
+  "name": "collaborative-editor",
+  "private": true,
+  "dependencies": {
+    "@rails/webpacker": "^3.2.2",
+    "babel-preset-react": "^6.24.1",
+    "prop-types": "^15.6.0",
+    "rails-ujs": "^5.1.5",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "turbolinks": "^5.1.1"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-jest": "^22.4.0",
+    "jest": "^22.4.0",
+    "webpack-dev-server": "^2.11.1"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "roots": [
+      "test/javascripts"
+    ],
+    "moduleDirectories": [
+      "node_modules",
+      "app/javascript/src"
+    ]
+  }
+}
