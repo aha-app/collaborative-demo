@@ -9,21 +9,21 @@ describe("transform", () => {
     it("should adjust a cursor against a sequence of operations", () => {
       const operations = [
         {
-          type: "insert",
+          kind: "insert",
           data: {
             text: "a",
             offset: 2
           }
         },
         {
-          type: "remove",
+          kind: "remove",
           data: {
             text: "b",
             offset: 1
           }
         },
         {
-          type: "insert",
+          kind: "insert",
           data: {
             text: "c",
             offset: 3
@@ -37,7 +37,7 @@ describe("transform", () => {
 
     describe("against an insert operation", () => {
       const operation = {
-        type: "insert",
+        kind: "insert",
         data: {
           text: "c",
           offset: 2
@@ -59,7 +59,7 @@ describe("transform", () => {
 
     describe("against a remove operation", () => {
       const operation = {
-        type: "remove",
+        kind: "remove",
         data: {
           text: "c",
           offset: 2
@@ -79,7 +79,7 @@ describe("transform", () => {
   describe("transformComponent", () => {
     describe("insert", () => {
       const left = {
-        type: "insert",
+        kind: "insert",
         data: {
           text: "a",
           offset: 2
@@ -89,14 +89,14 @@ describe("transform", () => {
       describe("against an insert", () => {
         it("before our position", () => {
           const right = {
-            type: "insert",
+            kind: "insert",
             data: {
               text: "b",
               offset: 1
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "insert",
+            kind: "insert",
             data: {
               text: "a",
               offset: 3
@@ -106,14 +106,14 @@ describe("transform", () => {
 
         it("at our position, with a lower priority", () => {
           const right = {
-            type: "insert",
+            kind: "insert",
             data: {
               text: "b",
               offset: 2
             }
           };
           expect(transformComponent(left, right, "right")).toEqual({
-            type: "insert",
+            kind: "insert",
             data: {
               text: "a",
               offset: 3
@@ -123,14 +123,14 @@ describe("transform", () => {
 
         it("at our position, with a higher priority", () => {
           const right = {
-            type: "insert",
+            kind: "insert",
             data: {
               text: "b",
               offset: 2
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "insert",
+            kind: "insert",
             data: {
               text: "a",
               offset: 2
@@ -140,14 +140,14 @@ describe("transform", () => {
 
         it("after our position", () => {
           const right = {
-            type: "insert",
+            kind: "insert",
             data: {
               text: "b",
               offset: 3
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "insert",
+            kind: "insert",
             data: {
               text: "a",
               offset: 2
@@ -159,14 +159,14 @@ describe("transform", () => {
       describe("against a remove", () => {
         it("before our position", () => {
           const right = {
-            type: "remove",
+            kind: "remove",
             data: {
               text: "b",
               offset: 1
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "insert",
+            kind: "insert",
             data: {
               text: "a",
               offset: 1
@@ -176,14 +176,14 @@ describe("transform", () => {
 
         it("at our position", () => {
           const right = {
-            type: "remove",
+            kind: "remove",
             data: {
               text: "b",
               offset: 2
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "insert",
+            kind: "insert",
             data: {
               text: "a",
               offset: 2
@@ -193,14 +193,14 @@ describe("transform", () => {
 
         it("after our position", () => {
           const right = {
-            type: "remove",
+            kind: "remove",
             data: {
               text: "b",
               offset: 3
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "insert",
+            kind: "insert",
             data: {
               text: "a",
               offset: 2
@@ -212,7 +212,7 @@ describe("transform", () => {
 
     describe("remove", () => {
       const left = {
-        type: "remove",
+        kind: "remove",
         data: {
           text: "a",
           offset: 2
@@ -222,14 +222,14 @@ describe("transform", () => {
       describe("against an insert", () => {
         it("before our position", () => {
           const right = {
-            type: "insert",
+            kind: "insert",
             data: {
               text: "b",
               offset: 1
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "remove",
+            kind: "remove",
             data: {
               text: "a",
               offset: 3
@@ -239,14 +239,14 @@ describe("transform", () => {
 
         it("at our position", () => {
           const right = {
-            type: "insert",
+            kind: "insert",
             data: {
               text: "b",
               offset: 2
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "remove",
+            kind: "remove",
             data: {
               text: "a",
               offset: 3
@@ -256,14 +256,14 @@ describe("transform", () => {
 
         it("after our position", () => {
           const right = {
-            type: "insert",
+            kind: "insert",
             data: {
               text: "b",
               offset: 3
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "remove",
+            kind: "remove",
             data: {
               text: "a",
               offset: 2
@@ -275,14 +275,14 @@ describe("transform", () => {
       describe("against a remove", () => {
         it("before our position", () => {
           const right = {
-            type: "remove",
+            kind: "remove",
             data: {
               text: "b",
               offset: 1
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "remove",
+            kind: "remove",
             data: {
               text: "a",
               offset: 1
@@ -292,7 +292,7 @@ describe("transform", () => {
 
         it("at our position", () => {
           const right = {
-            type: "remove",
+            kind: "remove",
             data: {
               text: "b",
               offset: 2
@@ -303,14 +303,14 @@ describe("transform", () => {
 
         it("after our position", () => {
           const right = {
-            type: "remove",
+            kind: "remove",
             data: {
               text: "b",
               offset: 3
             }
           };
           expect(transformComponent(left, right, "left")).toEqual({
-            type: "remove",
+            kind: "remove",
             data: {
               text: "a",
               offset: 2
@@ -325,14 +325,14 @@ describe("transform", () => {
     it("should transform a sequence of operations against another sequence of operations", () => {
       const ourOperations = [
         {
-          type: "remove",
+          kind: "remove",
           data: {
             text: "a",
             offset: 1
           }
         },
         {
-          type: "insert",
+          kind: "insert",
           data: {
             text: "s",
             offset: 3
@@ -341,14 +341,14 @@ describe("transform", () => {
       ];
       const theirOperations = [
         {
-          type: "remove",
+          kind: "remove",
           data: {
             text: "t",
             offset: 3
           }
         },
         {
-          type: "insert",
+          kind: "insert",
           data: {
             text: "h",
             offset: 1
@@ -360,14 +360,14 @@ describe("transform", () => {
 
       expect(newOurs).toEqual([
         {
-          type: "remove",
+          kind: "remove",
           data: {
             text: "a",
             offset: 2
           }
         },
         {
-          type: "insert",
+          kind: "insert",
           data: {
             text: "s",
             offset: 3
@@ -377,14 +377,14 @@ describe("transform", () => {
 
       expect(newTheirs).toEqual([
         {
-          type: "remove",
+          kind: "remove",
           data: {
             text: "t",
             offset: 2
           }
         },
         {
-          type: "insert",
+          kind: "insert",
           data: {
             text: "h",
             offset: 1
@@ -392,6 +392,49 @@ describe("transform", () => {
         }
       ]);
     });
+    it("should correctly transform single operations", () => {
+      const ourOperations = [
+        {
+          kind: "insert",
+          data: {
+            text: "a",
+            offset: 0
+          }
+        }
+      ];
+      const theirOperations = [
+        {
+          kind: "insert",
+          data: {
+            text: "b",
+            offset: 0
+          }
+        }
+      ];
+
+      const [newOurs, newTheirs] = transform(ourOperations, theirOperations);
+
+      expect(newOurs).toEqual([
+        {
+          kind: "insert",
+          data: {
+            text: "a",
+            offset: 0
+          }
+        }
+      ]);
+
+      expect(newTheirs).toEqual([
+        {
+          kind: "insert",
+          data: {
+            text: "b",
+            offset: 1
+          }
+        }
+      ]);
+    });
+
     it(
       "should correctly transform operations that turn into multiple operations"
     );

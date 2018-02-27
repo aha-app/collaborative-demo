@@ -6,6 +6,7 @@ class CollaborativeEditor extends React.Component {
     super(props);
     this.state = {
       document: new CollaborativeDocument(
+        props.documentId,
         props.content,
         props.version,
         this.onChange.bind(this)
@@ -49,13 +50,11 @@ class CollaborativeEditor extends React.Component {
 
     if (event.shiftKey && event.metaKey && event.key === "z") {
       event.preventDefault();
-      console.log("redo");
       return;
     }
 
     if (event.metaKey && event.key === "z") {
       event.preventDefault();
-      console.log("undo");
       return;
     }
 
@@ -93,7 +92,7 @@ class CollaborativeEditor extends React.Component {
 
   _insertText(text) {
     return {
-      type: "insert",
+      kind: "insert",
       data: {
         text: text,
         offset: this.state.document.offset
@@ -103,7 +102,7 @@ class CollaborativeEditor extends React.Component {
 
   _removeText(index) {
     return {
-      type: "remove",
+      kind: "remove",
       data: {
         text: this.state.document.content[this.state.document.offset + index],
         offset: this.state.document.offset + index

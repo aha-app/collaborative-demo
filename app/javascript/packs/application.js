@@ -7,10 +7,13 @@
 // To reference this file, add <%= javascript_pack_tag 'application' %> to the appropriate
 // layout file, like app/views/layouts/application.html.erb
 
-import Rails from 'rails-ujs';
-import Turbolinks from 'turbolinks';
-
+import Rails from "rails-ujs";
+import Turbolinks from "turbolinks";
+import ActionCable from "actioncable";
 import "src/collaborative_editor/index";
+
+window.App || (window.App = {});
+window.App.cable = ActionCable.createConsumer();
 
 Rails.start();
 Turbolinks.start();

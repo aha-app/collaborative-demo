@@ -2,12 +2,12 @@
 
 one:
   document: one
-  type: 
+  kind:
   data: MyString
   version: 1
 
 two:
   document: two
-  type: 
+  kind:
   data: MyString
   version: 1

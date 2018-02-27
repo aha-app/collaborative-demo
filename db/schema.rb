@@ -20,14 +20,14 @@ ActiveRecord::Schema.define(version: 20180219052018) do
   end
 
   create_table "operations", force: :cascade do |t|
-    t.integer "document_id"
-    t.string "type", null: false
+    t.integer "document_id", null: false
+    t.string "kind", null: false
     t.string "data", null: false
     t.integer "version", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["document_id", "version"], name: "index_operations_on_document_id_and_version", unique: true
     t.index ["document_id"], name: "index_operations_on_document_id"
-    t.index ["version"], name: "index_operations_on_version"
   end
 
 end

@@ -95,21 +95,21 @@ function transformRemoveRemove(left, right, priority) {
 }
 
 export function transformComponent(left, right, priority) {
-  if (left.type === "insert" && right.type === "insert") {
+  if (left.kind === "insert" && right.kind === "insert") {
     return transformInsertInsert(left, right, priority);
-  } else if (left.type === "insert" && right.type === "remove") {
+  } else if (left.kind === "insert" && right.kind === "remove") {
     return transformInsertRemove(left, right, priority);
-  } else if (left.type === "remove" && right.type === "insert") {
+  } else if (left.kind === "remove" && right.kind === "insert") {
     return transformRemoveInsert(left, right, priority);
-  } else if (left.type === "remove" && right.type === "remove") {
+  } else if (left.kind === "remove" && right.kind === "remove") {
     return transformRemoveRemove(left, right, priority);
   }
   return left;
 }
 
 export function transformOffset(offset, operations) {
-  return operations.reduce((offset, { type, data }) => {
-    switch (type) {
+  return operations.reduce((offset, { kind, data }) => {
+    switch (kind) {
       case "insert":
         if (data.offset <= offset) {
           return offset + 1;

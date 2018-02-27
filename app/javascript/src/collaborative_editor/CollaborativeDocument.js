@@ -1,16 +1,24 @@
+import CollaborationClient from "./CollaborationClient";
 import { transformOffset } from "./transform";
 
 class CollaborativeDocument {
-  constructor(content, version, onChange) {
-    this.version = version;
+  constructor(documentId, content, version, onChange) {
     this.content = content;
     this.offset = 0;
     this.onChange = onChange;
+    if (window.App && window.App.cable) {
+      this.collaborationClient = new CollaborationClient({
+        onOperationReceived: this._receivedOperation
+      });
+      this.collaborationClient.connect(documentId, version);
+    }
   }
 
   perform(operation) {
-    // Need to do collaboration here, eventually
     this._apply(operation);
+    if (this.collaborationClient) {
+      this.collaborationClient.submitOperations([operation]);
+    }
   }
 
   setOffset(newOffset) {
@@ -21,22 +29,27 @@ class CollaborativeDocument {
   undo() {}
   redo() {}
 
+  _receivedOperation = operation => {
+    this._apply(operation);
+  };
+
   // Apply an operation to the current document's content. After this
   // function runs, content should take the new operation into
   // account, and offset should also be adjusted to take the new
   // offset into account.
   _apply(operation) {
     const { content } = this;
-    const { type, data } = operation;
+    const { kind, data } = operation;
 
-    switch (type) {
+    switch (kind) {
       case "insert": {
         const { offset, text } = data;
         let newContent = content.substring(0, offset) + text;
 
-        if (offset < content.length - 1) {
+        if (offset < content.length) {
           newContent += content.substring(offset);
         }
+
         this.content = newContent;
         break;
       }
