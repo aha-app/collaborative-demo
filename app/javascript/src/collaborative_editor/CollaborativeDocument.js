@@ -2,36 +2,58 @@ import CollaborationClient from "./CollaborationClient";
 import { transformOffset } from "./transform";
 
 class CollaborativeDocument {
-  constructor(documentId, content, version, onChange) {
+  constructor(documentId, content, onChange) {
     this.content = content;
     this.offset = 0;
     this.onChange = onChange;
-    if (window.App && window.App.cable) {
-      this.collaborationClient = new CollaborationClient({
-        onOperationReceived: this._receivedOperation
-      });
-      this.collaborationClient.connect(documentId, version);
-    }
+    this.id = documentId;
+    this.selections = {};
+  }
+
+  startCollaborating(version) {
+    this.collaborationClient = new CollaborationClient({
+      onOperationReceived: this._receivedOperation,
+      allOperationsAcknowledged: this._allOperationsAcknowledged,
+      onSelectionUpdate: this._receivedUpdatedSelection
+    });
+    this.collaborationClient.connect(this, version);
   }
 
   perform(operation) {
-    this._apply(operation);
+    this._transformRemoteSelections(operation);
     if (this.collaborationClient) {
       this.collaborationClient.submitOperations([operation]);
     }
+    this._apply(operation);
   }
 
   setOffset(newOffset) {
     this._updateOffset(newOffset);
-    this.onChange && this.onChange(this);
+    this._change();
   }
 
   undo() {}
   redo() {}
 
+  _change() {
+    this.onChange && this.onChange(this);
+  }
+
+  _receivedUpdatedSelection = ({ clientId, offset }) => {
+    this.selections[clientId] = { clientId, offset };
+    this._change();
+  };
+
   _receivedOperation = operation => {
+    this._transformRemoteSelections(operation);
     this._apply(operation);
   };
+
+  _transformRemoteSelections(operation) {
+    Object.entries(this.selections).forEach(([key, value]) => {
+      value.offset = transformOffset(value.offset, [operation]);
+    });
+  }
 
   // Apply an operation to the current document's content. After this
   // function runs, content should take the new operation into
@@ -66,12 +88,17 @@ class CollaborativeDocument {
     }
 
     this._updateOffset(transformOffset(this.offset, [operation]));
-    this.onChange && this.onChange(this);
+    this._change();
     return this;
   }
 
   _updateOffset(newOffset) {
     this.offset = newOffset;
+    this.collaborationClient && this.collaborationClient.setOffset(newOffset);
+  }
+
+  _allOperationsAcknowledged() {
+    this.collaborationClient && this.collaborationClient.setOffset(this.offset);
   }
 }
 

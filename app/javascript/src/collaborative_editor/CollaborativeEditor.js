@@ -1,5 +1,6 @@
 import React from "react";
 import CollaborativeDocument from "./CollaborativeDocument";
+import Selections from "./Selections";
 
 class CollaborativeEditor extends React.Component {
   constructor(props) {
@@ -8,7 +9,6 @@ class CollaborativeEditor extends React.Component {
       document: new CollaborativeDocument(
         props.documentId,
         props.content,
-        props.version,
         this.onChange.bind(this)
       )
     };
@@ -71,22 +71,26 @@ class CollaborativeEditor extends React.Component {
     this._setSelection(this.state.document.offset);
   }
 
-  render() {
-    const style = {
-      width: "500px",
-      height: "200px"
-    };
+  componentDidMount() {
+    this.state.document.startCollaborating(this.props.version);
+  }
 
+  render() {
     return (
-      <textarea
-        ref={editor => (this.editor = editor)}
-        onKeyDown={this.onKeyDown}
-        onKeyPress={this.onKeyPress}
-        onSelect={this.onSelect}
-        className="editor"
-        style={style}
-        value={this.state.document.content}
-      />
+      <div className="editor">
+        <textarea
+          ref={editor => (this.editor = editor)}
+          onKeyDown={this.onKeyDown}
+          onKeyPress={this.onKeyPress}
+          onSelect={this.onSelect}
+          className="editor-content"
+          value={this.state.document.content}
+        />
+        <Selections
+          textarea={this.editor}
+          selections={this.state.document.selections}
+        />
+      </div>
     );
   }
 

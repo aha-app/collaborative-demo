@@ -1,10 +1,3 @@
-// Client-side, which assumes you've already requested the right to send web notifications
-// Note that params are the same as they were when you subscribed to the channel.
-// App.chatChannel = App.cable.subscriptions.create { channel: "ChatChannel", room: "Best Room" },
-// received: (data) ->
-// data => { sent_by: "Paul", body: "This is a cool chat app." }
-// App.chatChannel.send({ sent_by: "Paul", body: "This is a cool chat app." })
-
 function channelCallbacks(channelClass, onConnected) {
   return {
     connected: () => {
@@ -17,7 +10,6 @@ function channelCallbacks(channelClass, onConnected) {
       console.log("rejected");
     },
     received: data => {
-      console.log(data);
       switch (data.type) {
         case "op":
           return channelClass._operationsReceived(data.message, data.client_id);
@@ -63,14 +55,14 @@ export default class OperationsChannel {
   }
 
   _operationAcknowledged(data) {
-    if (this.acknowledgedCallback) this.acknowledgedCallback(data);
+    this.acknowledgedCallback && this.acknowledgedCallback(data);
   }
   _error(data) {
-    if (this.errorCallback) this.errorCallback(data);
+    this.errorCallback && this.errorCallback(data);
   }
   _operationsReceived(operations, clientId) {
     // ignore our own messages
     if (clientId === this.clientId) return;
-    if (this.receivedCallback) this.receivedCallback(operations);
+    this.receivedCallback && this.receivedCallback(operations);
   }
 }
