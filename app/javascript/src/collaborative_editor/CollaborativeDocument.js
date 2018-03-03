@@ -1,5 +1,6 @@
 import CollaborationClient from "./CollaborationClient";
 import { transformOffset } from "./transform";
+import UndoStack from "./UndoStack";
 
 class CollaborativeDocument {
   constructor(documentId, content, onChange) {
@@ -8,6 +9,7 @@ class CollaborativeDocument {
     this.onChange = onChange;
     this.id = documentId;
     this.selections = {};
+    this.undoStack = new UndoStack();
   }
 
   startCollaborating(version) {
@@ -19,12 +21,17 @@ class CollaborativeDocument {
     this.collaborationClient.connect(this, version);
   }
 
-  perform(operation) {
+  perform(operation, allowUndo = true) {
     this._transformRemoteSelections(operation);
     if (this.collaborationClient) {
       this.collaborationClient.submitOperations([operation]);
     }
+
     this._apply(operation);
+
+    if (allowUndo) {
+      this.undoStack.performedOperation(operation);
+    }
   }
 
   setOffset(newOffset) {
@@ -32,8 +39,17 @@ class CollaborativeDocument {
     this._change();
   }
 
-  undo() {}
-  redo() {}
+  undo() {
+    if (this.undoStack.canUndo) {
+      this.perform(this.undoStack.popUndoItem(), false);
+    }
+  }
+
+  redo() {
+    if (this.undoStack.canRedo) {
+      this.perform(this.undoStack.popRedoItem(), false);
+    }
+  }
 
   _change() {
     this.onChange && this.onChange(this);
@@ -46,6 +62,7 @@ class CollaborativeDocument {
 
   _receivedOperation = operation => {
     this._transformRemoteSelections(operation);
+    this.undoStack.receivedOperations([operation]);
     this._apply(operation);
   };
 

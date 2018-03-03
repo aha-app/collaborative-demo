@@ -32,6 +32,19 @@ class CollaborativeEditor extends React.Component {
   // For handling special characters, like Backspace and Tab
   onKeyDown = event => {
     let operation;
+
+    if (event.shiftKey && event.metaKey && event.key === "z") {
+      event.preventDefault();
+      this.state.document.redo();
+      return;
+    }
+
+    if (event.metaKey && event.key === "z") {
+      event.preventDefault();
+      this.state.document.undo();
+      return;
+    }
+
     if (event.key === "Backspace" && this.state.document.offset !== 0) {
       operation = this._removeText(-1);
     } else if (!event.shiftKey && event.key === "Tab") {
@@ -47,16 +60,6 @@ class CollaborativeEditor extends React.Component {
   // For handling most content characters
   onKeyPress = event => {
     let key = event.key;
-
-    if (event.shiftKey && event.metaKey && event.key === "z") {
-      event.preventDefault();
-      return;
-    }
-
-    if (event.metaKey && event.key === "z") {
-      event.preventDefault();
-      return;
-    }
 
     if (event.metaKey || event.ctrlKey) return;
     if (event.key === "Enter") key = "\n";
