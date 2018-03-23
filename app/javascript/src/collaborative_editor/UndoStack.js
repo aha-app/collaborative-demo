@@ -37,12 +37,7 @@ export default class UndoStack {
   }
 
   _transformStack(stack, operations) {
-    let newStack = [];
-    stack.forEach(operation => {
-      const [newStackOp, newOperations] = transform([operation], operations);
-      newStack.push(...newStackOp);
-      operations = newOperations;
-    });
+    const [newStack, newOperations] = transform(stack, operations);
     return newStack;
   }
 
