@@ -10,23 +10,49 @@ class CollaborativeEditor extends React.Component {
         props.documentId,
         props.content,
         this.onChange.bind(this)
-      )
+      ),
+      selectionStart: 0,
+      selectionEnd: 0
     };
     this.editor = null;
   }
 
+  get selectionIsCollapsed() {
+    return this.editor.selectionStart === this.editor.selectionEnd;
+  }
+
+  get selectionAnchorPoint() {
+    return this.editor.selectionDirection === "forward"
+      ? this.editor.selectionEnd
+      : this.editor.selectionStart;
+  }
+
+  get selectionFocusPoint() {
+    return this.editor.selectionDirection === "backward"
+      ? this.editor.selectionEnd
+      : this.editor.selectionStart;
+  }
+
   onChange = document => {
-    this.setState({ document });
+    this.setState({
+      document
+    });
+
+    if (this.selectionIsCollapsed) {
+      this.setState({
+        selectionStart: document.offset,
+        selectionEnd: document.offset
+      });
+    }
   };
 
   onSelect = event => {
     if (!this.editor) return;
-    const selectionOffset =
-      this.editor.selectionDirection === "backward"
-        ? this.editor.selectionEnd
-        : this.editor.selectionStart;
-
-    this.state.document.setOffset(selectionOffset);
+    this.setState({
+      selectionStart: this.editor.selectionStart,
+      selectionEnd: this.editor.selectionEnd
+    });
+    this.state.document.setOffset(this.selectionFocusPoint);
   };
 
   // For handling special characters, like Backspace and Tab
@@ -45,8 +71,8 @@ class CollaborativeEditor extends React.Component {
       return;
     }
 
-    if (event.key === "Backspace" && this.state.document.offset !== 0) {
-      operation = this._removeText(-1);
+    if (event.key === "Backspace") {
+      operation = this._remove(-1);
     } else if (!event.shiftKey && event.key === "Tab") {
       operation = this._insertText("\t");
     }
@@ -64,18 +90,18 @@ class CollaborativeEditor extends React.Component {
     if (event.metaKey || event.ctrlKey) return;
     if (event.key === "Enter") key = "\n";
 
-    const operation = this._insertText(key);
-
     event.preventDefault();
-    this.state.document.perform(operation);
+    this.state.document.perform(this._removeSelectedText());
+    this.state.document.perform(this._insertText(key));
   };
-
-  componentDidUpdate() {
-    this._setSelection(this.state.document.offset);
-  }
 
   componentDidMount() {
     this.state.document.startCollaborating(this.props.version);
+  }
+
+  componentDidUpdate() {
+    this.editor.selectionStart = this.state.selectionStart;
+    this.editor.selectionEnd = this.state.selectionEnd;
   }
 
   render() {
@@ -97,6 +123,10 @@ class CollaborativeEditor extends React.Component {
     );
   }
 
+  _collapseSelection() {
+    this.editor.selectionStart = this.editor.selectionEnd = this.selectionAnchorPoint;
+  }
+
   _insertText(text) {
     return {
       kind: "insert",
@@ -107,18 +137,33 @@ class CollaborativeEditor extends React.Component {
     };
   }
 
-  _removeText(index) {
+  _remove(offset) {
+    if (this.selectionIsCollapsed) {
+      return this._removeText(this.state.document.offset + offset);
+    } else {
+      return this._removeSelectedText();
+    }
+  }
+
+  _removeSelectedText() {
+    const operation = this._removeText(
+      this.state.selectionStart,
+      this.state.selectionEnd
+    );
+    this._collapseSelection();
+    return operation;
+  }
+
+  _removeText(startIndex, endIndex = startIndex + 1) {
+    if (startIndex < 0) return;
+
     return {
       kind: "remove",
       data: {
-        text: this.state.document.content[this.state.document.offset + index],
-        offset: this.state.document.offset + index
+        text: this.state.document.content.slice(startIndex, endIndex),
+        offset: startIndex
       }
     };
-  }
-
-  _setSelection(offset) {
-    this.editor.selectionStart = this.editor.selectionEnd = offset;
   }
 }
 
