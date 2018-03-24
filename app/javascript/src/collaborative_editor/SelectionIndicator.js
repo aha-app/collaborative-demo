@@ -89,8 +89,8 @@ export default class SelectionIndicator extends React.Component {
 
     const backgroundColor = COLORS[this.props.clientId % COLORS.length];
     const indicatorStyle = {
-      top: caret.top,
-      left: caret.left - 1,
+      top: caret.top - 1,
+      left: caret.left - 2,
       backgroundColor
     };
     const flagStyle = {
