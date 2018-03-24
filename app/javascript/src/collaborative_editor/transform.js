@@ -5,8 +5,8 @@ export function transform(ourOperations, theirOperations) {
 
   if (ourOperations.length === 1 && theirOperations.length === 1) {
     return [
-      toArray(transformComponent(ourOperations[0], theirOperations[0], "left")),
-      toArray(transformComponent(theirOperations[0], ourOperations[0], "right"))
+      toArray(transformOperation(ourOperations[0], theirOperations[0], true)),
+      toArray(transformOperation(theirOperations[0], ourOperations[0], false))
     ];
   }
 
@@ -40,85 +40,154 @@ function toArray(value) {
   return [value];
 }
 
-function transformInsertInsert(left, right, priority) {
+function operationBounds(operation) {
+  const { data: { offset, text } } = operation;
+  return {
+    start: offset,
+    end: offset + text.length,
+    length: text.length
+  };
+}
+
+function adjustOffsetAfterInsert(offset, insertOp, transformEqualOffsets) {
   if (
-    left.data.offset > right.data.offset ||
-    (left.data.offset === right.data.offset && priority === "right")
+    offset > insertOp.data.offset ||
+    (offset === insertOp.data.offset && transformEqualOffsets)
   ) {
-    const newData = Object.assign({}, left.data, {
-      offset: left.data.offset + 1
-    });
-
-    return Object.assign({}, left, { data: newData });
+    return offset + insertOp.data.text.length;
   }
-  return left;
+  return offset;
 }
 
-function transformInsertRemove(left, right, priority) {
-  if (left.data.offset > right.data.offset) {
-    const newData = Object.assign({}, left.data, {
-      offset: left.data.offset - 1
-    });
-
-    return Object.assign({}, left, { data: newData });
+function adjustOffsetAfterRemove(offset, removeOp) {
+  const bounds = operationBounds(removeOp);
+  if (offset > bounds.start && offset <= bounds.end) {
+    return bounds.start;
   }
-
-  return left;
+  if (offset > bounds.end) {
+    return offset - removeOp.data.text.length;
+  }
+  return offset;
 }
 
-function transformRemoveInsert(left, right, priority) {
-  if (left.data.offset >= right.data.offset) {
-    const newData = Object.assign({}, left.data, {
-      offset: left.data.offset + 1
-    });
-
-    return Object.assign({}, left, { data: newData });
-  }
-
-  return left;
+function operationWithNewData(operation, newData) {
+  const mergedData = Object.assign({}, operation.data, newData);
+  return Object.assign({}, operation, { data: mergedData });
 }
 
-function transformRemoveRemove(left, right, priority) {
-  // If they both target the same character, the second operation is
-  // a no-op -- it's already gone, no point deleting it again.
-  if (left.data.offset === right.data.offset) return;
-
-  if (left.data.offset > right.data.offset) {
-    const newData = Object.assign({}, left.data, {
-      offset: left.data.offset - 1
-    });
-
-    return Object.assign({}, left, { data: newData });
-  }
-
-  return left;
+function transformInsertInsert(left, right, winTies) {
+  const newOffset = adjustOffsetAfterInsert(left.data.offset, right, !winTies);
+  return operationWithNewData(left, { offset: newOffset });
 }
 
-export function transformComponent(left, right, priority) {
+function transformInsertRemove(left, right, winTies) {
+  const newOffset = adjustOffsetAfterRemove(left.data.offset, right);
+  return operationWithNewData(left, { offset: newOffset });
+}
+
+function transformRemoveInsert(left, right, winTies) {
+  const bounds = operationBounds(left);
+  const { offset: insertOffset, text: insertText } = right.data;
+  const { text } = left.data;
+
+  // If the insert was in the middle of the text we were deleting, so
+  // we need to split into two operations -- one for the text before
+  // the insert, and one after.
+  if (bounds.start < insertOffset && bounds.end > insertOffset) {
+    const firstOperation = operationWithNewData(left, {
+      text: text.slice(0, insertOffset - bounds.start)
+    });
+
+    const secondOperation = operationWithNewData(left, {
+      offset: insertOffset + insertText.length,
+      text: text.slice(
+        insertOffset - bounds.start,
+        bounds.end - insertOffset + 1
+      )
+    });
+
+    // Since this new operation now happens after the first, we need to
+    // transform it against the first operation.
+
+    return [
+      firstOperation,
+      transformOperation(secondOperation, firstOperation)
+    ];
+  }
+
+  const newOffset = adjustOffsetAfterInsert(left.data.offset, right, true);
+  return operationWithNewData(left, { offset: newOffset });
+}
+
+function transformRemoveRemove(left, right, winTies) {
+  const myBounds = operationBounds(left);
+  const theirBounds = operationBounds(right);
+  const { offset, text } = left.data;
+
+  // If their delete also deleted everything in our delete, our
+  // operation becomes meaningless.
+  if (theirBounds.start <= myBounds.start && theirBounds.end >= myBounds.end) {
+    return;
+  }
+
+  // If their delete is entirely after ours, it can't affect
+  // us. Return the original operation.
+  if (theirBounds.start >= myBounds.end) {
+    return left;
+  }
+
+  // If their delete is entirely before ours, we just have to adjust
+  // the offset.
+  if (theirBounds.end <= myBounds.start) {
+    const newOffset = adjustOffsetAfterRemove(myBounds.start, right);
+    return operationWithNewData(left, { offset: newOffset });
+  }
+
+  // If we have overlapping deletes, we need to slice up the text to
+  // ignore anything they've already deleted.
+
+  let newText = "";
+  let newOffset = offset;
+
+  // Keep text at the beginning that isn't overlapped by their delete
+  if (theirBounds.start > myBounds.start) {
+    newText += text.slice(0, theirBounds.start - myBounds.start);
+  }
+
+  // Keep text at the end that isn't overlapped by their delete
+  if (theirBounds.end < myBounds.end) {
+    newText += text.slice(theirBounds.end - myBounds.start, myBounds.end + 1);
+  }
+
+  // If they deleted text before us, we'll end up at their original spot.
+  if (theirBounds.start < myBounds.start) {
+    newOffset = theirBounds.start;
+  }
+
+  return operationWithNewData(left, { offset: newOffset, text: newText });
+}
+
+export function transformOperation(left, right, winTies) {
   if (left.kind === "insert" && right.kind === "insert") {
-    return transformInsertInsert(left, right, priority);
+    return transformInsertInsert(left, right, winTies);
   } else if (left.kind === "insert" && right.kind === "remove") {
-    return transformInsertRemove(left, right, priority);
+    return transformInsertRemove(left, right, winTies);
   } else if (left.kind === "remove" && right.kind === "insert") {
-    return transformRemoveInsert(left, right, priority);
+    return transformRemoveInsert(left, right, winTies);
   } else if (left.kind === "remove" && right.kind === "remove") {
-    return transformRemoveRemove(left, right, priority);
+    return transformRemoveRemove(left, right, winTies);
   }
   return left;
 }
 
 export function transformOffset(offset, operations) {
-  return operations.reduce((offset, { kind, data }) => {
+  return operations.reduce((offset, operation) => {
+    const { kind, data } = operation;
     switch (kind) {
       case "insert":
-        if (data.offset <= offset) {
-          return offset + 1;
-        }
-        break;
+        return adjustOffsetAfterInsert(offset, operation, true);
       case "remove":
-        if (data.offset < offset) {
-          return offset - 1;
-        }
+        return adjustOffsetAfterRemove(offset, operation);
     }
     return offset;
   }, offset);
