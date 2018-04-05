@@ -11,7 +11,11 @@ class OperationsChannel < ApplicationCable::Channel
   end
 
   def submit(data)
-    operation = @document.operations.create!(operation_params(data))
+    @document.reload
+    operation = @document.operations.build(operation_params(data))
+    @document.apply(operation)
+    @document.save!
+
     ActionCable.server.broadcast(client_key, {type: "ack", message: operation})
     ActionCable.server.broadcast(broadcast_key, {type: "op", client_id: @client_id, message: [operation]})
   rescue => e

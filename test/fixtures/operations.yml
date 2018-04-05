@@ -1,13 +1,1 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  document: one
-  kind:
-  data: MyString
-  version: 1
-
-two:
-  document: two
-  kind:
-  data: MyString
-  version: 1

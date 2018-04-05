@@ -113,6 +113,7 @@ class CollaborativeEditor extends React.Component {
           onKeyPress={this.onKeyPress}
           onSelect={this.onSelect}
           className="editor-content"
+          onChange={() => undefined}
           value={this.state.document.content}
         />
         <Selections
