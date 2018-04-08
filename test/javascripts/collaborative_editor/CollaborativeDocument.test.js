@@ -5,14 +5,16 @@ describe("CollaborativeDocument", () => {
     it("can be constructed with content and a version", () => {
       const doc = new CollaborativeDocument(1, "test content");
       expect(doc.content).toEqual("test content");
-      expect(doc.offset).toEqual(0);
+      expect(doc.selectionAnchor).toEqual(0);
+      expect(doc.selectionFocus).toEqual(0);
     });
   });
 
   describe("apply", () => {
-    it("should adjust the cursor position", () => {
+    it("should adjust the cursor positions", () => {
       const doc = new CollaborativeDocument(1, "car");
-      doc.offset = 3;
+      doc.selectionAnchor = 0;
+      doc.selectionFocus = 3;
 
       const operation = {
         kind: "insert",
@@ -21,7 +23,11 @@ describe("CollaborativeDocument", () => {
           offset: 1
         }
       };
-      expect(doc._apply(operation).offset).toBe(4);
+
+      doc._apply(operation);
+
+      expect(doc.selectionAnchor).toBe(0);
+      expect(doc.selectionFocus).toBe(4);
     });
 
     describe("an insert operation", () => {

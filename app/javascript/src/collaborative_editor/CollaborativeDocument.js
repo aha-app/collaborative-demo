@@ -5,11 +5,16 @@ import UndoStack from "./UndoStack";
 class CollaborativeDocument {
   constructor(documentId, content, onChange) {
     this.content = content;
-    this.offset = 0;
+    this.selectionAnchor = 0;
+    this.selectionFocus = 0;
     this.onChange = onChange;
     this.id = documentId;
     this.selections = {};
     this.undoStack = new UndoStack();
+  }
+
+  get offset() {
+    return this.selectionFocus;
   }
 
   startCollaborating(version) {
@@ -34,8 +39,8 @@ class CollaborativeDocument {
     }
   }
 
-  setOffset(newOffset) {
-    this._updateOffset(newOffset);
+  setSelection(anchor, focus) {
+    this._updateSelection(anchor, focus);
     this._change();
   }
 
@@ -104,14 +109,22 @@ class CollaborativeDocument {
       }
     }
 
-    this._updateOffset(transformOffset(this.offset, [operation]));
+    this._transformCurrentSelection([operation]);
     this._change();
     return this;
   }
 
-  _updateOffset(newOffset) {
-    this.offset = newOffset;
-    this.collaborationClient && this.collaborationClient.setOffset(newOffset);
+  _transformCurrentSelection(operations) {
+    this._updateSelection(
+      transformOffset(this.selectionAnchor, operations),
+      transformOffset(this.selectionFocus, operations)
+    );
+  }
+
+  _updateSelection(anchor, focus) {
+    this.selectionAnchor = anchor;
+    this.selectionFocus = focus;
+    this.collaborationClient && this.collaborationClient.setOffset(this.offset);
   }
 
   _allOperationsAcknowledged() {

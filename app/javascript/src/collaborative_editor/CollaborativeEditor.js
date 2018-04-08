@@ -10,9 +10,7 @@ class CollaborativeEditor extends React.Component {
         props.documentId,
         props.content,
         this.onChange.bind(this)
-      ),
-      selectionStart: 0,
-      selectionEnd: 0
+      )
     };
     this.editor = null;
   }
@@ -21,38 +19,48 @@ class CollaborativeEditor extends React.Component {
     return this.editor.selectionStart === this.editor.selectionEnd;
   }
 
-  get selectionAnchorPoint() {
-    return this.editor.selectionDirection === "forward"
-      ? this.editor.selectionEnd
-      : this.editor.selectionStart;
+  get selectionStart() {
+    const { selectionAnchor, selectionFocus } = this.state.document;
+    return this.selectionDirection === "backward"
+      ? selectionFocus
+      : selectionAnchor;
   }
 
-  get selectionFocusPoint() {
-    return this.editor.selectionDirection === "backward"
-      ? this.editor.selectionEnd
-      : this.editor.selectionStart;
+  get selectionEnd() {
+    const { selectionAnchor, selectionFocus } = this.state.document;
+    return this.selectionDirection === "backward"
+      ? selectionAnchor
+      : selectionFocus;
   }
 
+  get selectionDirection() {
+    const { selectionAnchor, selectionFocus } = this.state.document;
+    if (selectionAnchor === selectionFocus) return "none";
+    if (selectionAnchor > selectionFocus) return "backward";
+    return "forward";
+  }
+
+  // Called whenever document changes, either from our own change or
+  // one made collaboratively by someone else.
   onChange = document => {
-    this.setState({
-      document
-    });
-
-    if (this.selectionIsCollapsed) {
-      this.setState({
-        selectionStart: document.offset,
-        selectionEnd: document.offset
-      });
-    }
+    this.setState({ document });
   };
 
   onSelect = event => {
     if (!this.editor) return;
-    this.setState({
-      selectionStart: this.editor.selectionStart,
-      selectionEnd: this.editor.selectionEnd
-    });
-    this.state.document.setOffset(this.selectionFocusPoint);
+
+    const selectionAnchor = this.selectionIsCollapsed
+      ? this.editor.selectionStart
+      : this.state.document.selectionAnchor;
+
+    let selectionFocus = selectionAnchor;
+    if (this.editor.selectionStart < selectionAnchor) {
+      selectionFocus = this.editor.selectionStart;
+    } else if (this.editor.selectionEnd > selectionAnchor) {
+      selectionFocus = this.editor.selectionEnd;
+    }
+
+    this.state.document.setSelection(selectionAnchor, selectionFocus);
   };
 
   // For handling special characters, like Backspace and Tab
@@ -96,12 +104,22 @@ class CollaborativeEditor extends React.Component {
   };
 
   componentDidMount() {
+    document.addEventListener("selectionchange", this.onSelect);
     this.state.document.startCollaborating(this.props.version);
   }
 
+  componentWillUnmount() {
+    document.removeEventListener("selectionchange", this.onSelect);
+  }
+
   componentDidUpdate() {
-    this.editor.selectionStart = this.state.selectionStart;
-    this.editor.selectionEnd = this.state.selectionEnd;
+    // When a textarea gets recreated by React, it loses its selection
+    // attributes. That means we have to recreate them from the document.
+    this.editor.setSelectionRange(
+      this.selectionStart,
+      this.selectionEnd,
+      this.selectionDirection
+    );
   }
 
   render() {
@@ -111,7 +129,6 @@ class CollaborativeEditor extends React.Component {
           ref={editor => (this.editor = editor)}
           onKeyDown={this.onKeyDown}
           onKeyPress={this.onKeyPress}
-          onSelect={this.onSelect}
           className="editor-content"
           onChange={() => undefined}
           value={this.state.document.content}
@@ -125,7 +142,8 @@ class CollaborativeEditor extends React.Component {
   }
 
   _collapseSelection() {
-    this.editor.selectionStart = this.editor.selectionEnd = this.selectionAnchorPoint;
+    this.editor.selectionStart = this.editor.selectionEnd = this.state.document.selectionAnchor;
+    this.editor.selectionDirection = "none";
   }
 
   _insertText(text) {
@@ -147,10 +165,7 @@ class CollaborativeEditor extends React.Component {
   }
 
   _removeSelectedText() {
-    const operation = this._removeText(
-      this.state.selectionStart,
-      this.state.selectionEnd
-    );
+    const operation = this._removeText(this.selectionStart, this.selectionEnd);
     this._collapseSelection();
     return operation;
   }
