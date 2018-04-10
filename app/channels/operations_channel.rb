@@ -25,7 +25,7 @@ class OperationsChannel < ApplicationCable::Channel
   private
 
   def send_operations_since(version)
-    operations = @document.operations.where("version >= ?", version)
+    operations = @document.operations.where("version >= ?", version).order("version")
     ActionCable.server.broadcast(client_key, { type: "op", message: operations.to_a })
   end
 

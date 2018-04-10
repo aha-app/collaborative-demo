@@ -9,6 +9,7 @@ class CollaborationClient {
     onAllOperationsAcknowledged,
     onSelectionUpdate
   }) {
+    this.inflightOperation = null;
     this.pendingOperations = [];
     this.operationReceivedCallback = onOperationReceived;
     this.allOperationsAcknowledgedCallback = onAllOperationsAcknowledged;
@@ -76,31 +77,42 @@ class CollaborationClient {
       operation => operation.version >= this.version
     );
 
+    if (operations.length === 0) return;
+
+    const firstVersion = operations[0].version;
+    const lastVersion = operations[operations.length - 1].version;
+
     // We can only transform their operations against our operations
     // if both sets start from the same document version.
-    if (operations.length > 0 && operations[0].version !== this.version) return;
+    if (firstVersion !== this.version) return;
 
     const [newOurs, newTheirs] = transform(this.pendingOperations, operations);
-
     this.pendingOperations = newOurs;
 
-    newTheirs.forEach(operation => {
-      if (operation.version !== this.version) return;
-      this.operationReceivedCallback &&
-        this.operationReceivedCallback(operation);
-      this.updateVersion(operation.version + 1);
-    });
+    if (this.operationReceivedCallback) {
+      newTheirs.forEach(operation => this.operationReceivedCallback(operation));
+    }
+
+    this.updateVersion(lastVersion + 1);
+
+    // Catch up on anything else new, that we may have ignored because
+    // we didn't have the right version. We could be more efficient by
+    // storing every operation we've received, in order, so we don't
+    // need to request it again, but this works fine for a demo app.
+    this.operationsChannel.requestOperationsSince(this.version);
   };
 
   _operationError = data => {
+    this.inflightOperation = null;
     this.operationsChannel.requestOperationsSince(this.version);
     clearTimeout(this.operationTimeout);
     this.operationTimeout = setTimeout(this._submitNextOperation, 10);
   };
 
   _operationAcknowledged = operation => {
-    this.updateVersion(operation.version + 1);
+    this.inflightOperation = null;
     this.pendingOperations.shift();
+    this.updateVersion(operation.version + 1);
 
     if (this.pendingOperations.length > 0) {
       this._submitNextOperation();
@@ -112,21 +124,21 @@ class CollaborationClient {
   };
 
   _submitNextOperation = () => {
-    if (this.pendingOperations.length === 0) {
-      this.operationTimeout = null;
-      return;
-    }
+    clearTimeout(this.operationTimeout);
+    this.operationTimeout = null;
+
+    if (this.inflightOperation) return;
+    if (this.pendingOperations.length === 0) return;
 
     if (!this.operationsChannel) {
       // wait a bit, hopefully we'll have a connection soon
-      clearTimeout(this.operationTimeout);
       this.operationTimeout = setTimeout(this._submitNextOperation, 100);
       return;
     }
 
-    const operation = this.pendingOperations[0];
+    this.inflightOperation = this.pendingOperations[0];
     this.operationsChannel.submitOperation({
-      ...operation,
+      ...this.inflightOperation,
       version: this.version
     });
   };
