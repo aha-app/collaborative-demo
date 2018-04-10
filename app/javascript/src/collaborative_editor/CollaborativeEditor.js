@@ -165,6 +165,7 @@ class CollaborativeEditor extends React.Component {
   }
 
   _removeSelectedText() {
+    if (this.selectionIsCollapsed) return;
     const operation = this._removeText(this.selectionStart, this.selectionEnd);
     this._collapseSelection();
     return operation;
