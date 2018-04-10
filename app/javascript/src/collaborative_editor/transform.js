@@ -102,7 +102,7 @@ function transformRemoveInsert(left, right, winTies) {
       offset: insertOffset + insertText.length,
       text: text.slice(
         insertOffset - bounds.start,
-        bounds.end - insertOffset + 1
+        bounds.end + insertText.length + 1
       )
     });
 
@@ -127,7 +127,7 @@ function transformRemoveRemove(left, right, winTies) {
   // If their delete also deleted everything in our delete, our
   // operation becomes meaningless.
   if (theirBounds.start <= myBounds.start && theirBounds.end >= myBounds.end) {
-    return operationWithNewData(left, { text: "" });
+    return operationWithNewData(left, { offset: theirBounds.start, text: "" });
   }
 
   // If their delete is entirely after ours, it can't affect

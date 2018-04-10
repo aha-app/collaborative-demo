@@ -36,7 +36,7 @@ describe("transform", () => {
     describe("against a remove operation", () => {
       const operation = removeOp("cat", 2);
 
-      it("should adjust a cursor after the operation's target", () => {
+      it("should adjust a cursor after the deleted range", () => {
         expect(transformOffset(7, [operation])).toEqual(4);
       });
 
@@ -44,7 +44,7 @@ describe("transform", () => {
         expect(transformOffset(3, [operation])).toEqual(2);
       });
 
-      it("should adjust a cursor at the deleted range", () => {
+      it("should adjust a cursor at the end of the deleted range", () => {
         expect(transformOffset(5, [operation])).toEqual(2);
       });
 
@@ -153,6 +153,16 @@ describe("transform", () => {
           ]);
         });
 
+        it("inside our position, deleting the entire content", () => {
+          const left = removeOp("World  a", 0);
+          const right = insertOp(" ", 2);
+
+          expect(transformOperation(left, right, true)).toEqual([
+            removeOp("Wo", 0),
+            removeOp("rld  a", 1)
+          ]);
+        });
+
         it("after our position", () => {
           const right = insertOp("b", 5);
 
@@ -174,7 +184,9 @@ describe("transform", () => {
         it("at our range", () => {
           const right = removeOp("abc", 2);
 
-          expect(transformOperation(left, right, true)).toBeUndefined();
+          expect(transformOperation(left, right, true)).toEqual(
+            removeOp("", 2)
+          );
         });
 
         it("overlapping the start of our range", () => {
@@ -204,7 +216,9 @@ describe("transform", () => {
         it("containing our range", () => {
           const right = removeOp("abcd", 2);
 
-          expect(transformOperation(left, right, true)).toBeUndefined();
+          expect(transformOperation(left, right, true)).toEqual(
+            removeOp("", 2)
+          );
         });
 
         it("after our range", () => {
@@ -259,7 +273,7 @@ describe("transform", () => {
       const [newOurs, newTheirs] = transform(ourOperations, theirOperations);
 
       expect(newOurs).toEqual([removeOp("d", 2), insertOp("s", 0)]);
-      expect(newTheirs).toEqual([insertOp("e", 2)]);
+      expect(newTheirs).toEqual([removeOp("", 2), insertOp("e", 2)]);
     });
   });
 });
