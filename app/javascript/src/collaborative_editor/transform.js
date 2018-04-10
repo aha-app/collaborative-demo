@@ -127,7 +127,7 @@ function transformRemoveRemove(left, right, winTies) {
   // If their delete also deleted everything in our delete, our
   // operation becomes meaningless.
   if (theirBounds.start <= myBounds.start && theirBounds.end >= myBounds.end) {
-    return;
+    return operationWithNewData(left, { text: "" });
   }
 
   // If their delete is entirely after ours, it can't affect
@@ -145,7 +145,6 @@ function transformRemoveRemove(left, right, winTies) {
 
   // If we have overlapping deletes, we need to slice up the text to
   // ignore anything they've already deleted.
-
   let newText = "";
   let newOffset = offset;
 
