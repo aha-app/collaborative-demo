@@ -25,6 +25,12 @@ class DocumentTest < ActiveSupport::TestCase
     assert_equal "cart", doc.apply(op).content
   end
 
+  test "apply an empty insert operation at the end of a document" do
+    doc = Document.new(content: "car")
+    op = doc.generate_insert("", 3)
+    assert_equal "car", doc.apply(op).content
+  end
+
   test "apply a remove operation on an empty document" do
     doc = Document.new
     op = doc.generate_remove("", 0)
@@ -46,6 +52,12 @@ class DocumentTest < ActiveSupport::TestCase
   test "apply a remove operation at the end of a document" do
     doc = Document.new(content: "cart")
     op = doc.generate_remove("t", 3)
+    assert_equal "car", doc.apply(op).content
+  end
+
+  test "apply an empty remove operation at the end of a document" do
+    doc = Document.new(content: "car")
+    op = doc.generate_remove("", 3)
     assert_equal "car", doc.apply(op).content
   end
 

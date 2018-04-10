@@ -27,12 +27,15 @@ class CollaborativeDocument {
   }
 
   perform(operation, allowUndo = true) {
+    if (!operation) return;
+
+    this._apply(operation);
+
     this._transformRemoteSelections(operation);
+
     if (this.collaborationClient) {
       this.collaborationClient.submitOperations([operation]);
     }
-
-    this._apply(operation);
 
     if (allowUndo) {
       this.undoStack.performedOperation(operation);
@@ -101,7 +104,7 @@ class CollaborativeDocument {
         const { offset, text } = data;
         let newContent = content.substring(0, offset);
 
-        if (offset < content.length - 1) {
+        if (offset + text.length < content.length) {
           newContent += content.substring(offset + text.length);
         }
         this.content = newContent;

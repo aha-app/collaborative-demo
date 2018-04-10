@@ -147,6 +147,18 @@ describe("CollaborativeDocument", () => {
         };
         expect(doc._apply(operation).content).toBe("car");
       });
+
+      it("that removes an empty string", () => {
+        const doc = new CollaborativeDocument(1, "W I");
+        const operation = {
+          kind: "remove",
+          data: {
+            text: "",
+            offset: 2
+          }
+        };
+        expect(doc._apply(operation).content).toBe("W I");
+      });
     });
   });
 });
