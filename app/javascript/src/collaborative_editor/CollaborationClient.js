@@ -24,6 +24,7 @@ class CollaborationClient {
     this.version = initialVersion;
     this.connectOperationsChannel(document.id, initialVersion);
     this.connectSelectionsChannel(document, initialVersion);
+    window.setInterval(this._sendCurrentOffset, 2000);
   }
 
   connectOperationsChannel(documentId, initialVersion) {
@@ -61,10 +62,8 @@ class CollaborationClient {
   }
 
   setOffset(newOffset) {
-    if (this.pendingOperations.length === 0) {
-      this.selectionsChannel &&
-        this.selectionsChannel.setOffset(clientId, this.version, newOffset);
-    }
+    this.currentOffset = newOffset;
+    setTimeout(this._sendCurrentOffset, 10);
   }
 
   updateVersion(newVersion) {
@@ -141,6 +140,17 @@ class CollaborationClient {
       ...this.inflightOperation,
       version: this.version
     });
+  };
+
+  _sendCurrentOffset = () => {
+    if (this.pendingOperations.length === 0) {
+      this.selectionsChannel &&
+        this.selectionsChannel.setOffset(
+          clientId,
+          this.version,
+          this.currentOffset
+        );
+    }
   };
 
   _selectionReceived = ({ clientId, offset }) => {

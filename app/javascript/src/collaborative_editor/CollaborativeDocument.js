@@ -64,7 +64,7 @@ class CollaborativeDocument {
   }
 
   _receivedUpdatedSelection = ({ clientId, offset }) => {
-    this.selections[clientId] = { clientId, offset };
+    this.selections[clientId] = { clientId, offset, lastSeen: new Date() };
     this._change();
   };
 
@@ -75,7 +75,7 @@ class CollaborativeDocument {
   };
 
   _transformRemoteSelections(operation) {
-    Object.entries(this.selections).forEach(([key, value]) => {
+    Object.values(this.selections).forEach(value => {
       value.offset = transformOffset(value.offset, [operation]);
     });
   }
