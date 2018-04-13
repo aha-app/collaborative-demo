@@ -1,3 +1,5 @@
+import { operationWithNewData } from "./utils";
+
 export function transform(ourOperations, theirOperations) {
   if (ourOperations.length === 0 || theirOperations.length === 0) {
     return [ourOperations, theirOperations];
@@ -41,7 +43,9 @@ function toArray(value) {
 }
 
 function operationBounds(operation) {
-  const { data: { offset, text } } = operation;
+  const {
+    data: { offset, text }
+  } = operation;
   return {
     start: offset,
     end: offset + text.length,
@@ -68,11 +72,6 @@ function adjustOffsetAfterRemove(offset, removeOp) {
     return offset - removeOp.data.text.length;
   }
   return offset;
-}
-
-function operationWithNewData(operation, newData) {
-  const mergedData = Object.assign({}, operation.data, newData);
-  return Object.assign({}, operation, { data: mergedData });
 }
 
 function transformInsertInsert(left, right, winTies) {

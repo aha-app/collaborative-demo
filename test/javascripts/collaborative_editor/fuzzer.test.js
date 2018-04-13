@@ -48,7 +48,7 @@ function generateOpStream(document, count) {
   return { document: newDocument, operations: operations };
 }
 
-it("passes the fuzzer", () => {
+it("passes the transformation fuzzer", () => {
   const opStreamLength = 10;
   const iterations = 1000;
   let document = new CollaborativeDocument(1, "");

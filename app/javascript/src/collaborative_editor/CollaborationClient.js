@@ -1,6 +1,8 @@
 import OperationsChannel from "./OperationsChannel";
 import SelectionsChannel from "./SelectionsChannel";
 import { transform, transformOffset } from "./transform";
+import compose from "./compose";
+
 const clientId = Math.floor(Math.random() * 1000000);
 
 class CollaborationClient {
@@ -55,7 +57,7 @@ class CollaborationClient {
   }
 
   submitOperations(operations) {
-    this.pendingOperations.push(...operations);
+    this._queueOperations(operations);
     if (!this.operationTimeout) {
       this.operationTimeout = setTimeout(this._submitNextOperation, 10);
     }
@@ -157,6 +159,21 @@ class CollaborationClient {
     offset = transformOffset(offset, this.pendingOperations);
     this.selectionUpdateCallback &&
       this.selectionUpdateCallback({ clientId, offset });
+  };
+
+  _queueOperations = operations => {
+    // safePending, because the first operation in the pending list
+    // may or may not get accepted. If it gets accepted and we had
+    // composed operations into it, we lose those operations. So it's
+    // safest to compose operations that can't be in flight.
+    const safePending = operations.reduce(
+      (composedOperations, operation) => compose(composedOperations, operation),
+      this.pendingOperations.slice(1)
+    );
+
+    this.pendingOperations = this.pendingOperations
+      .slice(0, 1)
+      .concat(safePending);
   };
 }
 
