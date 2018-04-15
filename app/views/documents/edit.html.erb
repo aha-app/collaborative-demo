@@ -1,4 +1,7 @@
-<h1>Collaborative demo</h1>
+<% content_for :title, "Collaborative text editor example" %>
+
+<h1 class="text-center">A collaborative text editor example</h1>
+<p class="text-center"><%= link_to "source", "https://github.com/justinweiss/collaborative-demo", target: "_blank" %></p>
 <%= content_tag :div,
   class: "collaborative-editor",
   data: {
