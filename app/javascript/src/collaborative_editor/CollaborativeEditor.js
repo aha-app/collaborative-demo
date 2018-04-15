@@ -49,9 +49,15 @@ class CollaborativeEditor extends React.Component {
   onSelect = event => {
     if (!this.editor) return;
 
-    const selectionAnchor = this.selectionIsCollapsed
-      ? this.editor.selectionStart
-      : this.state.document.selectionAnchor;
+    let selectionAnchor = this.state.document.selectionAnchor;
+    if (this.selectionIsCollapsed) {
+      selectionAnchor = this.editor.selectionStart;
+    } else if (
+      this.editor.selectionStart < selectionAnchor &&
+      this.editor.selectionEnd > selectionAnchor
+    ) {
+      selectionAnchor = this.editor.selectionStart;
+    }
 
     let selectionFocus = selectionAnchor;
     if (this.editor.selectionStart < selectionAnchor) {
@@ -113,13 +119,15 @@ class CollaborativeEditor extends React.Component {
   }
 
   componentDidUpdate() {
-    // When a textarea gets recreated by React, it loses its selection
-    // attributes. That means we have to recreate them from the document.
-    this.editor.setSelectionRange(
-      this.selectionStart,
-      this.selectionEnd,
-      this.selectionDirection
-    );
+    if (this.editor === document.activeElement) {
+      // When a textarea gets recreated by React, it loses its selection
+      // attributes. That means we have to recreate them from the document.
+      this.editor.setSelectionRange(
+        this.selectionStart,
+        this.selectionEnd,
+        this.selectionDirection
+      );
+    }
   }
 
   render() {
